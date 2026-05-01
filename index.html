@@ -105,15 +105,15 @@ let state = {
 const objectiveTemplates = [
   'Review career goals with Career Navigator',
   'Complete onboarding and program orientation tasks',
-  'Request supportive services as discussed on the OAS, if needed',
-  'Enroll into and complete occupational skills training',
-  'Enroll into and complete WEX and/or OJT activity, if appropriate',
+  'Request supportive services as discussed on the OAS',
+  'Enroll in and complete occupational skills training',
+  'Enroll in and complete WEX and/or OJT activity',
   'Create and review resume with Career Navigator',
   'Complete job search activities related to the career goal',
   'Provide grades, progress reports, MSG documentation, or credential documentation',
   'Request incentives for completion of eligible assigned activities',
   'Transition to follow-up after successful employment',
-  'Request follow-up supportive services if needed'
+  'Request follow-up supportive services'
 ];
 function esc(s){return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function save(){localStorage.setItem('iepIssGeneratorState',JSON.stringify(state))}
