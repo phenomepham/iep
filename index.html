@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WIOA IEP/ISS Generator</title>
+  <style>
+    :root{
+      --bg:#f3f4f6; --panel:#ffffff; --ink:#111827; --muted:#6b7280; --line:#a3a3a3; --soft:#e5e7eb; --head:#d9d9d9; --accent:#2563eb; --accent-dark:#1d4ed8; --danger:#dc2626; --ok:#047857;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+    .app{display:grid;grid-template-columns:minmax(360px,520px) 1fr;gap:18px;min-height:100vh;padding:18px}
+    .builder,.previewWrap{background:var(--panel);border:1px solid var(--soft);border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.08)}
+    .builder{padding:18px;overflow:auto;max-height:calc(100vh - 36px)}
+    .previewWrap{padding:18px;overflow:auto;max-height:calc(100vh - 36px)}
+    h1{font-size:24px;margin:0 0 8px} h2{font-size:18px;margin:24px 0 10px} h3{font-size:15px;margin:18px 0 10px}
+    .sub{color:var(--muted);font-size:13px;line-height:1.4;margin:0 0 18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.full{grid-column:1/-1}
+    label{font-size:12px;font-weight:700;color:#374151;display:block;margin:0 0 4px}
+    input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:9px 10px;font:14px Arial,Helvetica,sans-serif;background:#fff;color:#111827}
+    textarea{min-height:70px;resize:vertical}.smallnote{font-size:12px;color:var(--muted);line-height:1.35;margin-top:6px}
+    button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer;background:#e5e7eb;color:#111827}button.primary{background:var(--accent);color:#fff}button.primary:hover{background:var(--accent-dark)}button.danger{background:#fee2e2;color:#991b1b}button.ok{background:#d1fae5;color:#065f46}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.card{border:1px solid #d1d5db;border-radius:14px;padding:12px;margin:12px 0;background:#fbfdff}.cardTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.cardTitle strong{font-size:14px}.obj{border-top:1px dashed #cbd5e1;margin-top:12px;padding-top:12px}
+    .templates{border:1px solid #d1d5db;background:#f9fafb;border-radius:14px;padding:12px;margin-top:12px}.templateBtn{font-size:12px;padding:7px 8px;margin:3px}.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px;font-size:13px;margin-top:10px}
+
+    /* ISS print preview */
+    .paper{width:8.5in;min-height:11in;margin:0 auto;background:white;color:#111;padding:.18in .15in .42in;border:1px solid #ddd;box-shadow:0 6px 20px rgba(0,0,0,.09);font-size:12px;line-height:1.15;position:relative}
+    .docTitle{text-align:center;font-size:16px;font-weight:700;margin:0 0 22px}.sectionBar{background:var(--head);font-weight:700;padding:3px 4px;margin:12px 0 5px}.infoRows{width:100%;border-collapse:collapse;margin-bottom:13px}.infoRows td{padding:3px 3px;vertical-align:top}.infoRows td:first-child{width:38%;font-weight:700}.goalLabel{background:var(--head);border:1px solid var(--line);font-weight:700;padding:4px;margin-top:8px}.issTable{width:100%;border-collapse:collapse;table-layout:fixed}.issTable th,.issTable td{border:1px solid var(--line);padding:4px;vertical-align:top;word-wrap:break-word}.issTable th{background:var(--head);font-weight:700;text-align:center}.comments{border:1px solid var(--line);border-top:0;padding:4px;min-height:18px}.comments b{font-weight:700}.objBlock{width:94%;margin:9px 0 0 auto}.objHeader{background:var(--head);border:1px solid var(--line);border-bottom:0;font-weight:700;padding:4px}.signatureBlock{margin-top:40px}.sigRow{display:flex;gap:8px;align-items:flex-end;margin:46px 0 0}.sigLine{border-top:2px solid #111;width:285px;padding-top:4px;font-weight:700}.dateLine{border-top:2px solid #111;width:95px;padding-top:4px;font-weight:700;text-align:center}.footer{position:absolute;left:.18in;right:.18in;bottom:.12in;font-size:11px;display:flex;justify-content:space-between;font-style:italic}.footer span:last-child{font-style:normal}.statusOpen{font-weight:400}.hideOnScreen{display:none}
+    .emptyText{color:#777;font-style:italic}.qualityList{font-size:12px;line-height:1.35;margin:10px 0 0;padding-left:18px}.qualityList li{margin-bottom:4px}
+
+    @media(max-width:1100px){.app{grid-template-columns:1fr}.builder,.previewWrap{max-height:none}.paper{transform-origin:top left;max-width:100%;overflow:hidden}}
+    @media print{
+      body{background:white}.app{display:block;padding:0}.builder,.topNote{display:none!important}.previewWrap{border:0;box-shadow:none;padding:0;max-height:none;overflow:visible}.paper{width:8.5in;min-height:11in;border:0;box-shadow:none;margin:0;padding:.18in .15in .42in;page-break-after:always}.noPrint{display:none!important}.hideOnScreen{display:block}@page{size:letter;margin:.25in}.goalSection{page-break-inside:auto}.objBlock{page-break-inside:avoid}.issTable tr{page-break-inside:avoid}.footer{position:fixed;bottom:.12in}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="builder">
+      <h1>WIOA IEP/ISS Generator</h1>
+      <p class="sub">Build an Individual Employment Plan / Individual Service Strategy in a format that mirrors the NEworks-style printout. Complete the fields, add goals and objectives, then print or save as PDF.</p>
+      <div class="toolbar">
+        <button class="primary" onclick="window.print()">Print / Save PDF</button>
+        <button onclick="exportJson()">Export JSON</button>
+        <button onclick="document.getElementById('importFile').click()">Import JSON</button>
+        <button class="danger" onclick="resetAll()">Clear</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importJson(event)">
+      </div>
+
+      <h2>General Information</h2>
+      <div class="grid">
+        <div><label>Plan ID</label><input data-bind="planId"></div>
+        <div><label>State ID</label><input data-bind="stateId"></div>
+        <div><label>User Name</label><input data-bind="userName"></div>
+        <div><label>User ID</label><input data-bind="userId"></div>
+        <div><label>Name</label><input data-bind="name" placeholder="Last, First"></div>
+        <div><label>Preferred Name</label><input data-bind="preferredName"></div>
+        <div><label>Created By</label><input data-bind="createdBy"></div>
+        <div><label>Created On</label><input data-bind="createdOn" type="date"></div>
+        <div><label>Last Edited By</label><input data-bind="lastEditedBy"></div>
+        <div><label>Edited On</label><input data-bind="editedOn" type="date"></div>
+      </div>
+
+      <h2>Plan Information</h2>
+      <div class="grid">
+        <div><label>Plan Start Date</label><input data-bind="planStart" type="date"></div>
+        <div><label>LWDB / Region</label><input data-bind="region" value="Region 7"></div>
+        <div class="full"><label>Plan started in office location</label><input data-bind="office" value="American Job Center - Omaha"></div>
+        <div><label>Plan closed on</label><input data-bind="planClosed" type="date"></div>
+        <div><label>Program</label><input data-bind="program" value="WIOA"></div>
+        <div><label>Staff Display Name</label><input data-bind="staff" placeholder="Pham, Benjamin"></div>
+      </div>
+
+      <h2>Goals and Objectives</h2>
+      <div class="toolbar"><button class="ok" onclick="addGoal()">+ Add Goal</button><button onclick="addTrainingEmploymentTemplate()">Add Training + Employment Template</button></div>
+      <div id="goalEditor"></div>
+
+      <div class="templates">
+        <strong>Objective Library</strong>
+        <div class="smallnote">Use these as quick text options. Add them to the selected goal, then edit as needed.</div>
+        <div id="objectiveLibrary"></div>
+      </div>
+
+      <h2>Compliance Check</h2>
+      <ul class="qualityList" id="qualityList"></ul>
+    </aside>
+
+    <main class="previewWrap">
+      <div class="topNote noPrint smallnote">Live preview. Use “Print / Save PDF” to create a signed copy.</div>
+      <section class="paper" id="paper"></section>
+    </main>
+  </div>
+
+<script>
+const today = new Date().toISOString().slice(0,10);
+const dateOut = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US') : '';
+const uid = () => Math.random().toString(36).slice(2,9);
+let state = {
+  planId:'', stateId:'', userName:'', userId:'', name:'', preferredName:'',
+  createdBy:'', createdOn:today, lastEditedBy:'', editedOn:today,
+  planStart:today, region:'Region 7', office:'American Job Center - Omaha', planClosed:'',
+  program:'WIOA', staff:'', goals:[]
+};
+const objectiveTemplates = [
+  'Review career goals with Career Navigator',
+  'Complete onboarding and program orientation tasks',
+  'Request supportive services as discussed on the OAS, if needed',
+  'Enroll into and complete occupational skills training',
+  'Enroll into and complete WEX and/or OJT activity, if appropriate',
+  'Create and review resume with Career Navigator',
+  'Complete job search activities related to the career goal',
+  'Provide grades, progress reports, MSG documentation, or credential documentation',
+  'Request incentives for completion of eligible assigned activities',
+  'Transition to follow-up after successful employment',
+  'Request follow-up supportive services if needed'
+];
+function esc(s){return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function save(){localStorage.setItem('iepIssGeneratorState',JSON.stringify(state))}
+function load(){try{const x=JSON.parse(localStorage.getItem('iepIssGeneratorState')); if(x) state={...state,...x}}catch(e){}}
+function bindInputs(){document.querySelectorAll('[data-bind]').forEach(el=>{const k=el.dataset.bind; el.value=state[k]||''; el.oninput=()=>{state[k]=el.value; if(k==='createdBy' && !state.lastEditedBy){state.lastEditedBy=el.value} renderAll();};});}
+function addGoal(seed={}){state.goals.push({id:uid(),goalNumber:'',title:'',term:'Short Term',dateEstablished:state.planStart||today,estimatedCompletion:'',actualCompletion:'',lastEditDate:state.editedOn||today,program:state.program||'WIOA',staff:state.staff||'',status:'Open',comments:'',objectives:[],...seed}); renderAll();}
+function addObj(goalId, text=''){const g=state.goals.find(x=>x.id===goalId); if(!g) return; g.objectives.push({id:uid(),objective:text,dateEstablished:g.dateEstablished||state.planStart||today,actualCompletion:'',lastEditDate:state.editedOn||today,reviewDate:g.estimatedCompletion||'',program:state.program||'WIOA',staff:state.staff||'',status:'Open',comments:''}); renderAll();}
+function delGoal(id){state.goals=state.goals.filter(g=>g.id!==id); renderAll();}
+function delObj(gid, oid){const g=state.goals.find(x=>x.id===gid); if(g){g.objectives=g.objectives.filter(o=>o.id!==oid)} renderAll();}
+function moveGoal(id,dir){const i=state.goals.findIndex(g=>g.id===id); const j=i+dir; if(i<0||j<0||j>=state.goals.length)return; [state.goals[i],state.goals[j]]=[state.goals[j],state.goals[i]]; renderAll();}
+function updateGoal(id,k,v){const g=state.goals.find(x=>x.id===id); if(g){g[k]=v; renderAll();}}
+function updateObj(gid,oid,k,v){const g=state.goals.find(x=>x.id===gid); const o=g?.objectives.find(x=>x.id===oid); if(o){o[k]=v; renderAll();}}
+function addTrainingEmploymentTemplate(){
+  state.goals.push({id:uid(),goalNumber:'',title:'Training - Participate in and complete training related to the selected career pathway',term:'Short Term',dateEstablished:state.planStart||today,estimatedCompletion:'',actualCompletion:'',lastEditDate:state.editedOn||today,program:state.program||'WIOA',staff:state.staff||'',status:'Open',comments:'',objectives:[
+    objSeed('Review career goals with Career Navigator'),objSeed('Complete onboarding and program orientation tasks'),objSeed('Request supportive services as discussed on the OAS, if needed'),objSeed('Enroll into and complete occupational skills training'),objSeed('Provide attendance, grades, progress reports, MSG documentation, or credential documentation')]});
+  state.goals.push({id:uid(),goalNumber:'',title:'Employment - Obtain employment related to the selected career pathway and transition to follow-up',term:'Long Term',dateEstablished:state.planStart||today,estimatedCompletion:'',actualCompletion:'',lastEditDate:state.editedOn||today,program:state.program||'WIOA',staff:state.staff||'',status:'Open',comments:'',objectives:[
+    objSeed('Create and review resume with Career Navigator'),objSeed('Complete job search activities related to the career goal'),objSeed('Request incentives for completion of eligible assigned activities'),objSeed('Transition to follow-up after successful employment'),objSeed('Request follow-up supportive services if needed')]});
+  renderAll();
+}
+function objSeed(text){return {id:uid(),objective:text,dateEstablished:state.planStart||today,actualCompletion:'',lastEditDate:state.editedOn||today,reviewDate:'',program:state.program||'WIOA',staff:state.staff||'',status:'Open',comments:''}}
+function renderGoalEditor(){
+  const box=document.getElementById('goalEditor');
+  if(!state.goals.length){box.innerHTML='<div class="warn">No goals added yet. Add at least one short-term or long-term goal.</div>';return;}
+  box.innerHTML=state.goals.map((g,gi)=>`<div class="card"><div class="cardTitle"><strong>Goal ${gi+1}/${state.goals.length}</strong><div><button onclick="moveGoal('${g.id}',-1)">↑</button> <button onclick="moveGoal('${g.id}',1)">↓</button> <button class="danger" onclick="delGoal('${g.id}')">Delete</button></div></div>
+    <div class="grid"><div><label>Goal #</label><input value="${esc(g.goalNumber)}" oninput="updateGoal('${g.id}','goalNumber',this.value)"></div><div><label>Term of Goal</label><select onchange="updateGoal('${g.id}','term',this.value)"><option ${g.term==='Short Term'?'selected':''}>Short Term</option><option ${g.term==='Long Term'?'selected':''}>Long Term</option></select></div><div class="full"><label>Goal Text</label><textarea oninput="updateGoal('${g.id}','title',this.value)">${esc(g.title)}</textarea></div><div><label>Date Established</label><input type="date" value="${esc(g.dateEstablished)}" oninput="updateGoal('${g.id}','dateEstablished',this.value)"></div><div><label>Estimated Completion</label><input type="date" value="${esc(g.estimatedCompletion)}" oninput="updateGoal('${g.id}','estimatedCompletion',this.value)"></div><div><label>Actual Completion</label><input type="date" value="${esc(g.actualCompletion)}" oninput="updateGoal('${g.id}','actualCompletion',this.value)"></div><div><label>Last Edit Date</label><input type="date" value="${esc(g.lastEditDate)}" oninput="updateGoal('${g.id}','lastEditDate',this.value)"></div><div><label>Program</label><input value="${esc(g.program)}" oninput="updateGoal('${g.id}','program',this.value)"></div><div><label>Staff</label><input value="${esc(g.staff)}" oninput="updateGoal('${g.id}','staff',this.value)"></div><div><label>Status</label><select onchange="updateGoal('${g.id}','status',this.value)"><option ${g.status==='Open'?'selected':''}>Open</option><option ${g.status==='Completed'?'selected':''}>Completed</option><option ${g.status==='Closed'?'selected':''}>Closed</option></select></div><div class="full"><label>Goal Comments</label><textarea oninput="updateGoal('${g.id}','comments',this.value)">${esc(g.comments)}</textarea></div></div>
+    <h3>Objectives</h3><div class="toolbar"><button onclick="addObj('${g.id}')">+ Add Objective</button></div>
+    ${g.objectives.map((o,oi)=>`<div class="obj"><div class="cardTitle"><strong>Objective ${oi+1}</strong><button class="danger" onclick="delObj('${g.id}','${o.id}')">Delete</button></div><div class="grid"><div class="full"><label>Objective Text</label><textarea oninput="updateObj('${g.id}','${o.id}','objective',this.value)">${esc(o.objective)}</textarea></div><div><label>Date Established</label><input type="date" value="${esc(o.dateEstablished)}" oninput="updateObj('${g.id}','${o.id}','dateEstablished',this.value)"></div><div><label>Actual Completion</label><input type="date" value="${esc(o.actualCompletion)}" oninput="updateObj('${g.id}','${o.id}','actualCompletion',this.value)"></div><div><label>Last Edit Date</label><input type="date" value="${esc(o.lastEditDate)}" oninput="updateObj('${g.id}','${o.id}','lastEditDate',this.value)"></div><div><label>Review Date</label><input type="date" value="${esc(o.reviewDate)}" oninput="updateObj('${g.id}','${o.id}','reviewDate',this.value)"></div><div><label>Program(s)</label><input value="${esc(o.program)}" oninput="updateObj('${g.id}','${o.id}','program',this.value)"></div><div><label>Staff</label><input value="${esc(o.staff)}" oninput="updateObj('${g.id}','${o.id}','staff',this.value)"></div><div><label>Status</label><select onchange="updateObj('${g.id}','${o.id}','status',this.value)"><option ${o.status==='Open'?'selected':''}>Open</option><option ${o.status==='Completed'?'selected':''}>Completed</option><option ${o.status==='Closed'?'selected':''}>Closed</option></select></div><div class="full"><label>Objective Comments</label><textarea oninput="updateObj('${g.id}','${o.id}','comments',this.value)">${esc(o.comments)}</textarea></div></div></div>`).join('')}</div>`).join('');
+}
+function renderLibrary(){
+  const target=document.getElementById('objectiveLibrary');
+  const first=state.goals[0]?.id;
+  target.innerHTML = objectiveTemplates.map(t=>`<button class="templateBtn" ${first?`onclick="addObj('${first}', '${esc(t).replace(/&#39;/g,"\\'")}')"`:'disabled'}>${esc(t)}</button>`).join('') + '<div class="smallnote">Library buttons add to Goal 1. Move or edit the objective after adding.</div>';
+}
+function colWidthsGoal(){return '<col style="width:7%"><col style="width:17%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:15%"><col style="width:7%">'}
+function colWidthsObj(){return '<col style="width:24%"><col style="width:12%"><col style="width:13%"><col style="width:11%"><col style="width:11%"><col style="width:14%"><col style="width:13%"><col style="width:10%">'}
+function renderPaper(){
+  const paper=document.getElementById('paper');
+  const printedName = state.name || 'Participant Name';
+  const by = state.createdBy || state.staff || 'Staff';
+  let html = `<div class="docTitle">Individual Employment Plan</div>
+    <div class="sectionBar">General Information</div>
+    <table class="infoRows"><tr><td>Plan ID:</td><td>${esc(state.planId)}</td></tr><tr><td>State ID:</td><td>${esc(state.stateId)}</td></tr><tr><td>User Name:</td><td>${esc(state.userName)}</td></tr><tr><td>User ID:</td><td>${esc(state.userId)}</td></tr><tr><td>Name:</td><td>${esc(state.name)}</td></tr><tr><td>Preferred Name:</td><td>${esc(state.preferredName)}</td></tr><tr><td>Created By:</td><td>${esc(state.createdBy)}</td></tr><tr><td>Created On:</td><td>${dateOut(state.createdOn)}</td></tr><tr><td>Last Edited By:</td><td>${esc(state.lastEditedBy)}</td></tr><tr><td>Edited On:</td><td>${dateOut(state.editedOn)}</td></tr></table>
+    <div class="sectionBar">Plan Information</div>
+    <table class="infoRows"><tr><td>Plan Start Date:</td><td>${dateOut(state.planStart)}</td></tr><tr><td>LWDB/Region:</td><td>${esc(state.region)}</td></tr><tr><td>Plan started in office location:</td><td>${esc(state.office)}</td></tr><tr><td>Plan closed on:</td><td>${dateOut(state.planClosed)}</td></tr></table>
+    <div class="sectionBar">Goals and Objectives Established:</div>`;
+  if(!state.goals.length){html += '<p class="emptyText">No goals entered.</p>'}
+  state.goals.forEach((g,gi)=>{
+    html += `<div class="goalSection"><div class="goalLabel">Goal ${gi+1}/${state.goals.length}</div><table class="issTable">${colWidthsGoal()}<thead><tr><th>Goal #</th><th>Goal</th><th>Term of Goal</th><th>Date Established</th><th>Estimated Date for Completion</th><th>Actual Completion Date</th><th>Last Edit Date</th><th>Program</th><th>Staff</th><th>Status</th></tr></thead><tbody><tr><td>${esc(g.goalNumber)}</td><td>${esc(g.title)}</td><td>${esc(g.term)}</td><td>${dateOut(g.dateEstablished)}</td><td>${dateOut(g.estimatedCompletion)}</td><td>${dateOut(g.actualCompletion)}</td><td>${dateOut(g.lastEditDate)}</td><td>${esc(g.program||state.program)}</td><td>${esc(g.staff||state.staff)}</td><td>${esc(g.status)}</td></tr></tbody></table><div class="comments"><b>Comments:</b> ${esc(g.comments)}</div>
+      <div class="objBlock"><div class="objHeader">Objectives to Goal ${gi+1}/${state.goals.length}: ${esc(g.title)}</div><table class="issTable">${colWidthsObj()}<thead><tr><th>Objective</th><th>Date Established</th><th>Actual Completion Date</th><th>Last Edit Date</th><th>Review Date</th><th>Program(s)</th><th>Staff</th><th>Status</th></tr></thead><tbody>`;
+    if(!g.objectives.length){html += '<tr><td colspan="8" class="emptyText">No objectives entered.</td></tr>'}
+    g.objectives.forEach((o,oi)=>{html += `<tr><td>${esc(o.objective)}</td><td>${dateOut(o.dateEstablished)}</td><td>${dateOut(o.actualCompletion)}</td><td>${dateOut(o.lastEditDate)}</td><td>${dateOut(o.reviewDate)}</td><td>${esc(o.program||state.program)}</td><td>${esc(o.staff||state.staff)}</td><td>${esc(o.status)}</td></tr><tr><td colspan="8" class="comments"><b>Comments:</b> ${esc(o.comments)}</td></tr>`});
+    html += '</tbody></table></div></div>';
+  });
+  html += `<div class="sectionBar" style="margin-top:22px">Signatures</div><div class="signatureBlock"><div class="sigRow"><div class="sigLine">Applicant Signature</div><div class="dateLine">Date</div></div><div class="sigRow"><div class="sigLine">Staff Signature</div><div class="dateLine">Date</div></div></div><div class="footer"><span>${esc(printedName)} (User ID: ${esc(state.userId)}). &nbsp; Printed on ${dateOut(today)} by ${esc(by)}</span><span>Page 1</span></div>`;
+  paper.innerHTML=html;
+}
+function renderQuality(){
+  const issues=[];
+  if(!state.name) issues.push('Add participant name.');
+  if(!state.stateId) issues.push('Add State ID.');
+  if(!state.planStart) issues.push('Add plan start date.');
+  if(!state.goals.length) issues.push('Add at least one goal.');
+  state.goals.forEach((g,i)=>{if(!g.title) issues.push(`Goal ${i+1}: add goal text.`); if(!g.dateEstablished) issues.push(`Goal ${i+1}: add date established.`); if(!g.estimatedCompletion) issues.push(`Goal ${i+1}: add estimated completion date.`); if(!g.objectives.length) issues.push(`Goal ${i+1}: add at least one objective.`); g.objectives.forEach((o,j)=>{if(!o.objective) issues.push(`Goal ${i+1}, Objective ${j+1}: add objective text.`); if(!o.reviewDate) issues.push(`Goal ${i+1}, Objective ${j+1}: add review date.`);});});
+  document.getElementById('qualityList').innerHTML = issues.length ? issues.map(x=>`<li>${esc(x)}</li>`).join('') : '<li style="color:var(--ok)">No missing required fields detected by this basic check.</li>';
+}
+function renderAll(){save();bindInputs();renderGoalEditor();renderLibrary();renderPaper();renderQuality();}
+function exportJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='iep-iss-data.json'; a.click(); URL.revokeObjectURL(a.href)}
+function importJson(e){const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{try{state={...state,...JSON.parse(r.result)}; renderAll();}catch(err){alert('Could not import JSON file.')}}; r.readAsText(f)}
+function resetAll(){if(!confirm('Clear all entered data?'))return; localStorage.removeItem('iepIssGeneratorState'); state={planId:'',stateId:'',userName:'',userId:'',name:'',preferredName:'',createdBy:'',createdOn:today,lastEditedBy:'',editedOn:today,planStart:today,region:'Region 7',office:'American Job Center - Omaha',planClosed:'',program:'WIOA',staff:'',goals:[]}; renderAll();}
+load(); if(!state.goals) state.goals=[]; renderAll();
+</script>
+</body>
+</html>
